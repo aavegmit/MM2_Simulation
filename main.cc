@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "main.h"
-
+#include <queue>
 
 using namespace std ;
 
@@ -15,19 +15,29 @@ void usage(){
 }
 
 
-/* Main function for mm2
+
+// Global variables
+struct params *pa ;
+int optionT ;
+queue<struct customerStruct *> custQ ;
+pthread_mutex_t mutex ;
+pthread_cond_t cv ;
+
+
+
+/* 
+ *  Main function for mm2
  * Command line argument parsing and
  * calling respective methods
  */
 int main(int argc, char **argv){
-	struct params *pa ;
 	pa = (struct params *)malloc(sizeof(struct params)) ;
 	memset(pa->tsfile, '\0', sizeof(pa->tsfile)) ;
 
-	struct customerStruct *customer ; 
+//	struct customerStruct *customer ; 
 
 
-	int optionT = 0 ;
+	optionT = 0 ;
 	//default values
 	pa->lambda = 0.5 ;
 	pa->mu = 0.35 ;
@@ -148,17 +158,48 @@ int main(int argc, char **argv){
 		printf("\ntsfile = %s\n", pa->tsfile) ;
 
 
-	// Allocate memory to pa->num number of customers
-	customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)*pa->num) ;
+//	// Allocate memory to pa->num number of customers
+//	customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)*pa->num) ;
+
+
+	// Thread mutex initailization
+	int mres ;
+	mres = pthread_mutex_init(&mutex, NULL);
+	if (mres != 0) {
+		    perror("Mutex initialization failed");
+		        exit(EXIT_FAILURE);
+	}
+
+	// Thread CV initialization
+	int cres ;
+	cres = pthread_cond_init(&cv, NULL) ;
+	if (cres != 0) {
+		    perror("CV initialization failed");
+		        exit(EXIT_FAILURE);
+	}
 
 
 	// Thread creation and join code taken from WROX Publications book
 	// Create a new thread
-	pthread_t a_thread[pa->num] ;
+	pthread_t a_thread ;
 	void *thread_result ;
 	int res ;
-	for (int i = 0; i < pa->num; i++){
-		res = pthread_create(&a_thread[i], NULL, thread_function, (void *)i);
+	res = pthread_create(&a_thread, NULL, thread_function, (void *)NULL);
+	if (res != 0) {
+		perror("Thread creation failed");
+		exit(EXIT_FAILURE);
+	}
+
+
+
+	// Create server thread(s)
+	int numServer = 1 ;
+	if (!pa->oneServer)
+		++numServer ;
+	pthread_t s_thread[2] ;
+	void *sthread_result ;
+	for(int j = 0; j < numServer; j++){
+		res = pthread_create(&s_thread[j], NULL, server_function, (void *)j);
 		if (res != 0) {
 			perror("Thread creation failed");
 			exit(EXIT_FAILURE);
@@ -169,29 +210,32 @@ int main(int argc, char **argv){
 
 
 
-
-
-	// Thread Join code taken from WROX Publications
-	for (int i = 0; i < pa->num; ++i){
-		printf("Waiting for thread %d to finish...\n", i);
-		res = pthread_join(a_thread[i], &thread_result);
+	// Wait for the server thread(s) to join
+	for(int j = 0; j < numServer; j++){
+		printf("Waiting for server thread to finish...\n");
+		res = pthread_join(s_thread[j], &sthread_result);
 		if (res != 0) {
 			perror("Thread join failed");
 			exit(EXIT_FAILURE);
 		}
+	}
+
+
+	// Thread Join code taken from WROX Publications
+	printf("Waiting for arrival thread to finish...\n");
+	res = pthread_join(a_thread, &thread_result);
+	if (res != 0) {
+		perror("Thread join failed");
+		exit(EXIT_FAILURE);
 	}
 	//	printf("Thread joined, it returned %s\n", (char *)thread_result);
 
 
 
 
+	printf("Main Thread exiting\n") ;
 
 } // end of main function
 
 
 
-void *thread_function(void *arg){
-	int tid = (long)arg ;
-	printf("Thread %d exiting\n", tid) ;
-	return 0 ;
-}
