@@ -13,7 +13,7 @@ struct params{
 	double lambda;
 	double mu;
 	bool oneServer ;
-	int seedval ;
+	long seedval ;
 	int size ;
 	int num ;
 	bool exp ;
@@ -22,8 +22,10 @@ struct params{
 
 struct customerStruct{
 	int id ;
-	struct timeval iat ;
-	struct timeval service ;
+	double iat ;
+	double service ;
+	double queuingD ;
+	struct timeval entersAt ;
 } ;
 
 extern struct params *pa ;
@@ -31,6 +33,14 @@ extern int optionT ;
 extern queue<struct customerStruct *> custQ ;
 extern pthread_mutex_t mutex ;
 extern pthread_cond_t cv ;
+extern timeval tv ;
+extern sigset_t newSet ;
+extern struct sigaction act ;
+
 
 void *thread_function(void *arg) ;
 void *server_function(void *arg) ;
+double getInterval(bool, double) ;
+char *getTimestamp() ;
+double getDiff(struct timeval, struct timeval) ;
+void InitRandom(long) ;

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include "main.h"
 #include <queue>
+#include <signal.h>
 
 using namespace std ;
 
@@ -22,6 +23,9 @@ int optionT ;
 queue<struct customerStruct *> custQ ;
 pthread_mutex_t mutex ;
 pthread_cond_t cv ;
+struct timeval tv ;
+sigset_t newSet ;
+struct sigaction act ;
 
 
 
@@ -34,8 +38,11 @@ int main(int argc, char **argv){
 	pa = (struct params *)malloc(sizeof(struct params)) ;
 	memset(pa->tsfile, '\0', sizeof(pa->tsfile)) ;
 
-//	struct customerStruct *customer ; 
 
+	// Handling the signal
+	sigemptyset(&newSet) ;
+	sigaddset(&newSet, SIGINT) ;
+	pthread_sigmask(SIG_BLOCK, &newSet, NULL) ;
 
 	optionT = 0 ;
 	//default values
@@ -144,7 +151,7 @@ int main(int argc, char **argv){
 		printf("\tsystem = M/M/2\n") ;
 	}
 	if (!optionT)
-		printf("\tseed = %d\n", pa->seedval) ;
+		printf("\tseed = %ld\n", pa->seedval) ;
 	printf("\tnumber = %d\n", pa->num) ;
 	if(!optionT){
 		if(pa->exp){
@@ -158,26 +165,33 @@ int main(int argc, char **argv){
 		printf("\ntsfile = %s\n", pa->tsfile) ;
 
 
-//	// Allocate memory to pa->num number of customers
-//	customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)*pa->num) ;
+	//	// Allocate memory to pa->num number of customers
+	//	customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)*pa->num) ;
+
+
+	// Init random seed
+	InitRandom(pa->seedval) ;
+
+	printf("00000000.000ms: emulation begins\n") ;
 
 
 	// Thread mutex initailization
 	int mres ;
 	mres = pthread_mutex_init(&mutex, NULL);
 	if (mres != 0) {
-		    perror("Mutex initialization failed");
-		        exit(EXIT_FAILURE);
+		perror("Mutex initialization failed");
+		exit(EXIT_FAILURE);
 	}
 
 	// Thread CV initialization
 	int cres ;
 	cres = pthread_cond_init(&cv, NULL) ;
 	if (cres != 0) {
-		    perror("CV initialization failed");
-		        exit(EXIT_FAILURE);
+		perror("CV initialization failed");
+		exit(EXIT_FAILURE);
 	}
 
+	gettimeofday(&tv, NULL) ;
 
 	// Thread creation and join code taken from WROX Publications book
 	// Create a new thread
@@ -206,13 +220,14 @@ int main(int argc, char **argv){
 		}
 	}
 
+	//	printf("%8d.%dms:\n", (int)tv.tv_sec, (int)tv.tv_usec) ;
+
 
 
 
 
 	// Wait for the server thread(s) to join
 	for(int j = 0; j < numServer; j++){
-		printf("Waiting for server thread to finish...\n");
 		res = pthread_join(s_thread[j], &sthread_result);
 		if (res != 0) {
 			perror("Thread join failed");
@@ -222,7 +237,6 @@ int main(int argc, char **argv){
 
 
 	// Thread Join code taken from WROX Publications
-	printf("Waiting for arrival thread to finish...\n");
 	res = pthread_join(a_thread, &thread_result);
 	if (res != 0) {
 		perror("Thread join failed");
@@ -232,10 +246,20 @@ int main(int argc, char **argv){
 
 
 
-
-	printf("Main Thread exiting\n") ;
-
 } // end of main function
 
+
+// Set seed for random function
+void InitRandom(long l_seed)
+{
+	if (l_seed == 0L) {
+		time_t localtime=(time_t)0;
+
+		time(&localtime);
+		srand48((long)localtime);
+	} else {
+		srand48(l_seed);
+	}
+}
 
 
