@@ -43,7 +43,13 @@ double getInterval(bool exp, double rate){
 }
 
 void arrival_interrupt(int sig){
-	printf("Ctrl + C caught\n") ;
+	shutdown = 1 ;
+	pthread_mutex_lock(&mutex) ;
+	while(custQ.size() != 0)
+		custQ.pop() ;
+	pthread_cond_broadcast(&cv) ;
+	pthread_mutex_unlock(&mutex) ;
+	pthread_exit(0) ;
 }
 
 void *thread_function(void *arg){
@@ -76,18 +82,22 @@ void *thread_function(void *arg){
 				gettimeofday(&(customer->entersAt), NULL) ;
 				printf("%sms: c%d enters Q1\n", getTimestamp(), i+1) ;
 				pthread_cond_signal(&cv) ;
+				pthread_mutex_unlock(&mutex) ;
 			}
 			else{
 				printf("%sms: c%d dropped\n", getTimestamp(), i+1) ;
 				// May be add this customer in the stats q
 			}
 
-			pthread_mutex_unlock(&mutex) ;
 
 		}
 
 
 	}
+	pthread_mutex_lock(&mutex) ;
+	shutdown = 1 ;
+	pthread_cond_broadcast(&cv) ;
+	pthread_mutex_unlock(&mutex) ;
 
 
 

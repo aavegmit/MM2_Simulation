@@ -36,6 +36,7 @@ extern pthread_cond_t cv ;
 extern timeval tv ;
 extern sigset_t newSet ;
 extern struct sigaction act ;
+extern int shutdown;
 
 
 void *thread_function(void *arg) ;

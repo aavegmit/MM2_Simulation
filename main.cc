@@ -26,6 +26,7 @@ pthread_cond_t cv ;
 struct timeval tv ;
 sigset_t newSet ;
 struct sigaction act ;
+int shutdown = 0 ;
 
 
 
@@ -224,6 +225,13 @@ int main(int argc, char **argv){
 
 
 
+	// Thread Join code taken from WROX Publications
+//	res = pthread_join(a_thread, &thread_result);
+//	if (res != 0) {
+//		perror("Thread join failed");
+//		exit(EXIT_FAILURE);
+//	}
+
 
 
 	// Wait for the server thread(s) to join
@@ -236,14 +244,9 @@ int main(int argc, char **argv){
 	}
 
 
-	// Thread Join code taken from WROX Publications
-	res = pthread_join(a_thread, &thread_result);
-	if (res != 0) {
-		perror("Thread join failed");
-		exit(EXIT_FAILURE);
-	}
 	//	printf("Thread joined, it returned %s\n", (char *)thread_result);
 
+	printf("Statistics:\n") ;
 
 
 } // end of main function

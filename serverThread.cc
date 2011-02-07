@@ -1,13 +1,25 @@
 #include "main.h"
+#include <pthread.h>
+#include <signal.h>
+
 
 
 void *server_function(void *arg){
 	long sid = (long)arg ;
 	struct customerStruct *customer ;
 
+
 	while(1){
 		pthread_mutex_lock(&mutex) ;
+		if (shutdown){
+			pthread_mutex_unlock(&mutex) ;
+			pthread_exit(0) ;
+		}
 		while (custQ.size() == 0){
+			if (shutdown){
+				pthread_mutex_unlock(&mutex) ;
+				pthread_exit(0) ;
+			}
 			pthread_cond_wait(&cv, &mutex) ;
 		}
 		// Dequeue a customer
@@ -18,7 +30,7 @@ void *server_function(void *arg){
 		customer->queuingD = getDiff(now, customer->entersAt) ;
 		printf("%sms: c%d leaves Q1, time in Q1 = %.3fms\n",getTimestamp(), customer->id, customer->queuingD) ;
 		pthread_mutex_unlock(&mutex) ;
-		
+
 
 		printf("%sms: c%d begin service at s%ld\n",getTimestamp(), customer->id, sid) ;
 		//  Work on the customer
