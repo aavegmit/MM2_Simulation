@@ -19,6 +19,8 @@ void usage(){
 
 // Global variables
 struct params *pa ;
+struct statistics *stat ;
+struct custTsfile **trace ;
 int optionT ;
 queue<struct customerStruct *> custQ ;
 pthread_mutex_t mutex ;
@@ -38,6 +40,8 @@ int shutdown = 0 ;
 int main(int argc, char **argv){
 	pa = (struct params *)malloc(sizeof(struct params)) ;
 	memset(pa->tsfile, '\0', sizeof(pa->tsfile)) ;
+
+	stat = (struct statistics *)malloc(sizeof(struct statistics)) ;
 
 
 	// Handling the signal
@@ -163,15 +167,43 @@ int main(int argc, char **argv){
 		}
 	}
 	else
-		printf("\ntsfile = %s\n", pa->tsfile) ;
+		printf("\ttsfile = %s\n", pa->tsfile) ;
 
-
-	//	// Allocate memory to pa->num number of customers
-	//	customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)*pa->num) ;
 
 
 	// Init random seed
-	InitRandom(pa->seedval) ;
+	if (optionT){
+		FILE *fp ;
+		int tnum;
+		long tnum1 ;
+		if( (fp = fopen(pa->tsfile, "r")) == NULL){
+			printf("File open unsuccessfull\n") ;
+			exit(0) ;
+		}
+		if(!fscanf (fp, "%d", &tnum)){
+			printf("Error in Trace file\n") ;
+			exit(0) ;
+		}	
+		pa->num = tnum ;
+		trace = (struct custTsfile **)malloc(tnum) ;
+		// Allocate num amount of memory to trace structures
+		for (int i = 0; i < tnum; ++i){
+			trace[i] = (struct custTsfile *)malloc(sizeof(struct custTsfile)) ;
+			if(!fscanf (fp, "%ld", &tnum1)){
+				printf("Error in Trace file\n") ;
+				exit(0) ;
+			}	
+			trace[i]->iat = tnum1 ;
+			if(!fscanf (fp, "%ld", &tnum1)){
+				printf("Error in Trace file\n") ;
+				exit(0) ;
+			}	
+			trace[i]->service = tnum1 ;
+		}
+	}
+	else{
+		InitRandom(pa->seedval) ;
+	}
 
 	printf("00000000.000ms: emulation begins\n") ;
 
@@ -226,11 +258,11 @@ int main(int argc, char **argv){
 
 
 	// Thread Join code taken from WROX Publications
-//	res = pthread_join(a_thread, &thread_result);
-//	if (res != 0) {
-//		perror("Thread join failed");
-//		exit(EXIT_FAILURE);
-//	}
+	//	res = pthread_join(a_thread, &thread_result);
+	//	if (res != 0) {
+	//		perror("Thread join failed");
+	//		exit(EXIT_FAILURE);
+	//	}
 
 
 

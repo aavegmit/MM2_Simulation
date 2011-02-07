@@ -43,6 +43,7 @@ double getInterval(bool exp, double rate){
 }
 
 void arrival_interrupt(int sig){
+	pthread_sigmask(SIG_BLOCK, &newSet, NULL) ;
 	shutdown = 1 ;
 	pthread_mutex_lock(&mutex) ;
 	while(custQ.size() != 0)
@@ -63,34 +64,30 @@ void *thread_function(void *arg){
 	// Insert customers into the Q
 	for (int i = 0; i < pa->num ; ++i){
 		// If input to be taken from the input file
-		if(optionT){
-
-
-		}
-		// Input is from the command line
-		else{
-			double ita ;
+		double ita ;
+		if (optionT)
+			ita = trace[i]->iat ;
+		else
 			ita = getInterval(pa->exp, pa->lambda);
-			usleep(ita*1000) ;
-			printf("%sms: c%d arrives, inter-arrival time = %.3fms\n", getTimestamp(), i+1, ita) ;
-			customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)) ;
-			customer->iat = ita ;
-			if ( (int)custQ.size() <= pa->size){
-				customer->id = i+1 ;
-				pthread_mutex_lock(&mutex) ;
-				custQ.push(customer) ;
-				gettimeofday(&(customer->entersAt), NULL) ;
-				printf("%sms: c%d enters Q1\n", getTimestamp(), i+1) ;
-				pthread_cond_signal(&cv) ;
-				pthread_mutex_unlock(&mutex) ;
-			}
-			else{
-				printf("%sms: c%d dropped\n", getTimestamp(), i+1) ;
-				// May be add this customer in the stats q
-			}
-
-
+		usleep(ita*1000) ;
+		printf("%sms: c%d arrives, inter-arrival time = %.3fms\n", getTimestamp(), i+1, ita) ;
+		customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)) ;
+		customer->iat = ita ;
+		if ( (int)custQ.size() <= pa->size){
+			customer->id = i+1 ;
+			pthread_mutex_lock(&mutex) ;
+			custQ.push(customer) ;
+			gettimeofday(&(customer->entersAt), NULL) ;
+			printf("%sms: c%d enters Q1\n", getTimestamp(), i+1) ;
+			pthread_cond_signal(&cv) ;
+			pthread_mutex_unlock(&mutex) ;
 		}
+		else{
+			printf("%sms: c%d dropped\n", getTimestamp(), i+1) ;
+			// May be add this customer in the stats q
+		}
+
+
 
 
 	}

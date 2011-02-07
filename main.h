@@ -28,7 +28,20 @@ struct customerStruct{
 	struct timeval entersAt ;
 } ;
 
+struct custTsfile{
+	long iat ;
+	long service ;
+} ;
+
+struct statistics{
+	int customersArrived ;
+	int customersServiced ;
+	int customersDropped ;
+};
+
 extern struct params *pa ;
+extern struct custTsfile **trace ;
+extern struct statistics *stat ;
 extern int optionT ;
 extern queue<struct customerStruct *> custQ ;
 extern pthread_mutex_t mutex ;
