@@ -51,14 +51,14 @@ double getInterval(bool exp, double rate){
 }
 
 void arrival_interrupt(int sig){
-	pthread_sigmask(SIG_BLOCK, &newSet, NULL) ;
+//	pthread_sigmask(SIG_BLOCK, &newSet, NULL) ;
 	shutdown = 1 ;
-	pthread_mutex_lock(&mutex) ;
-	while(custQ.size() != 0)
-		custQ.pop() ;
-	pthread_cond_broadcast(&cv) ;
-	pthread_mutex_unlock(&mutex) ;
-	pthread_exit(0) ;
+//	pthread_mutex_lock(&mutex) ;
+//	while(custQ.size() != 0)
+//		custQ.pop() ;
+//	pthread_cond_broadcast(&cv) ;
+//	pthread_mutex_unlock(&mutex) ;
+//	pthread_exit(0) ;
 }
 
 void *thread_function(void *arg){
@@ -69,6 +69,7 @@ void *thread_function(void *arg){
 	stat->customersArrived = 0 ;
 	stat->totalIAT = 0.0 ;
 	stat->totalTimeSpent = 0.00 ;
+	stat->totalTimeSpentSq = 0.00 ;
 	stat->customersDropped = 0.0 ;
 	stat->serviceTime = 0.0 ;
 	stat->avCustQtemp = tv ;
@@ -80,12 +81,24 @@ void *thread_function(void *arg){
 
 	// Insert customers into the Q
 	for (int i = 0; i < pa->num ; ++i){
-		// If input to be taken from the input file
+		if (shutdown){
+			pthread_sigmask(SIG_BLOCK, &newSet, NULL) ;
+			shutdown = 1 ;
+			pthread_mutex_lock(&mutex) ;
+			while(custQ.size() != 0)
+				custQ.pop() ;
+			pthread_cond_broadcast(&cv) ;
+			pthread_mutex_unlock(&mutex) ;
+			pthread_exit(0) ;
+		}
 		double ita ;
+		// If input to be taken from the input file
 		if (optionT)
 			ita = trace[i]->iat ;
 		else
 			ita = getInterval(pa->exp, pa->lambda);
+		// Compute the bookkeeping time
+
 		usleep(ita*1000) ;
 		customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)) ;
 		gettimeofday(&(customer->arrivesAt), NULL) ;

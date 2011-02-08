@@ -7,6 +7,7 @@
 #include "main.h"
 #include <queue>
 #include <signal.h>
+#include <math.h>
 
 using namespace std ;
 
@@ -296,12 +297,12 @@ int main(int argc, char **argv){
 	printf("\taverage service time = %012.3fms\n\n", (stat->serviceTime / stat->customersServed) ) ;
 
 	printf("\taverage number of customers in Q1 = %015.6f\n", (stat->avCustQ / stat->endSimulation ));
-	printf("\taverage number of customers in S1 =\n");
-	printf("\taverage number of customers in S2 =\n\n");
+	printf("\taverage number of customers in S1 = %.6f\n", (stat->serverBusy[0] / stat->endSimulation));
+	printf("\taverage number of customers in S2 = %.6f\n\n", (stat->serverBusy[1] / stat->endSimulation));
 
 	printf("\taverage time spent in system = %012.3fms\n\n", (stat->totalTimeSpent / stat->customersServed));
 
-	printf("\tstandard deviation for time spent in system =\n\n") ;
+	printf("\tstandard deviation for time spent in system = %012.3fms\n\n", sqrt((stat->totalTimeSpentSq / stat->customersServed)- pow( (stat->totalTimeSpent / stat->customersServed),2)   )) ;
 
 	printf("\tCustomer drop probbility = %.2f\n", (stat->customersDropped / stat->customersArrived) ) ;
 			

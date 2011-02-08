@@ -44,11 +44,13 @@ struct statistics{
 	double customersDropped ;	// Customers dropped because of queue size
 	double customersServed ;	// Customers served by the servers
 	double endSimulation ;		// Timestamp when the simulation ends
-	double avCustQ ;		//	
+	double avCustQ ;		// Wighted total of time when Q is not empty	
 	double totalIAT ;		// Total Inter Arrival Time
 	double serviceTime ;  		// Total service time
 	double totalTimeSpent;		// Total time spent in the system by a customer
+	double totalTimeSpentSq;	// Total of square of time spent in the system by a customer
 	struct timeval avCustQtemp;	// Timestamp when a customer entered the Q last time
+	double serverBusy[2];		// Total time when Servers are busy 
 };
 
 // Extern variable declaration

@@ -1,8 +1,7 @@
 #include "main.h"
 #include <pthread.h>
 #include <signal.h>
-
-
+#include <math.h>
 
 void *server_function(void *arg){
 	long sid = (long)arg ;
@@ -51,6 +50,8 @@ void *server_function(void *arg){
 		printf("%sms: c%d departs from s%ld, service time = %.3fms ",getTimestamp(), customer->id,sid, inter) ;
 		printf("time in system = %.3fms\n", getDiff(customer->departedAt, customer->arrivesAt)) ;
 		stat->totalTimeSpent += getDiff(customer->departedAt, customer->arrivesAt) ;
+		stat->totalTimeSpentSq += pow(getDiff(customer->departedAt, customer->arrivesAt) , 2) ;
+		stat->serverBusy[sid] += getDiff(customer->departedAt, now) ;
 
 	}
 
