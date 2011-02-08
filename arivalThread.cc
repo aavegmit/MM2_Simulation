@@ -11,13 +11,21 @@ char *getTimestamp(){
 	struct timeval tv1 ;
 	gettimeofday(&tv1, NULL) ;
 	long int diff = (tv1.tv_sec * 1000000 + tv1.tv_usec ) - (tv.tv_sec * 1000000 + tv.tv_usec) ;
-	sprintf(timestamp, "%08ld.%03ld", (long int)diff/1000  , (long int)diff % 1000000 ) ;
+	sprintf(timestamp, "%08ld.%03ld", (long int)diff/1000  , (long int)diff % 1000 ) ;
 	timestamp[12] = '\0' ;
 	return timestamp ;
 }
 
 double getDiff(struct timeval t2, struct timeval t1){
 	long double diff = (t2.tv_sec * 1000000 + t2.tv_usec ) - (t1.tv_sec * 1000000 + t1.tv_usec) ;
+	double result = diff / 1000 ;
+	return result ;
+}
+
+double getDiffFromNow(){
+	struct timeval t2 ;
+	gettimeofday(&t2, NULL) ;
+	long double diff = (t2.tv_sec * 1000000 + t2.tv_usec ) - (tv.tv_sec * 1000000 + tv.tv_usec) ;
 	double result = diff / 1000 ;
 	return result ;
 }
@@ -56,6 +64,15 @@ void arrival_interrupt(int sig){
 void *thread_function(void *arg){
 	struct customerStruct *customer ;
 
+	// Initialize stat elements
+	stat->customersDropped = 0.0 ;
+	stat->customersArrived = 0 ;
+	stat->totalIAT = 0.0 ;
+	stat->totalTimeSpent = 0.00 ;
+	stat->customersDropped = 0.0 ;
+	stat->serviceTime = 0.0 ;
+	stat->avCustQtemp = tv ;
+
 	// Unblock the SIGINT signal here
 	act.sa_handler = arrival_interrupt ;
 	sigaction(SIGINT, &act, NULL) ;
@@ -70,14 +87,19 @@ void *thread_function(void *arg){
 		else
 			ita = getInterval(pa->exp, pa->lambda);
 		usleep(ita*1000) ;
-		printf("%sms: c%d arrives, inter-arrival time = %.3fms\n", getTimestamp(), i+1, ita) ;
 		customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)) ;
+		gettimeofday(&(customer->arrivesAt), NULL) ;
+		++stat->customersArrived ;
+		stat->totalIAT += ita ;
+		printf("%sms: c%d arrives, inter-arrival time = %.3fms\n", getTimestamp(), i+1, ita) ;
 		customer->iat = ita ;
-		if ( (int)custQ.size() <= pa->size){
+		if ( (int)custQ.size() < pa->size){
 			customer->id = i+1 ;
 			pthread_mutex_lock(&mutex) ;
 			custQ.push(customer) ;
 			gettimeofday(&(customer->entersAt), NULL) ;
+			stat->avCustQ += (custQ.size() - 1) * getDiff(customer->entersAt, stat->avCustQtemp) ;
+			stat->avCustQtemp = customer->entersAt ;
 			printf("%sms: c%d enters Q1\n", getTimestamp(), i+1) ;
 			pthread_cond_signal(&cv) ;
 			pthread_mutex_unlock(&mutex) ;
@@ -85,6 +107,7 @@ void *thread_function(void *arg){
 		else{
 			printf("%sms: c%d dropped\n", getTimestamp(), i+1) ;
 			// May be add this customer in the stats q
+			++stat->customersDropped ;
 		}
 
 

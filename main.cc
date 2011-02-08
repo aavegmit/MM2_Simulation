@@ -112,6 +112,17 @@ int main(int argc, char **argv){
 					}
 					pa->num = atof(*argv) ;
 				}
+				else if (strcmp(*argv, "-size") == 0) {
+					++i, argv++; 
+					if (i >= (argc-1)) {
+						usage() ;
+					}
+					if (!atof(*argv) || atof(*argv) < 0 ){
+						printf("Bad size value\n") ;
+						exit(0) ;
+					}
+					pa->size = atof(*argv) ;
+				}
 				else if (strcmp(*argv, "-d") == 0) {
 					++i, argv++; 
 					if (i >= (argc-1)) {
@@ -157,6 +168,7 @@ int main(int argc, char **argv){
 	}
 	if (!optionT)
 		printf("\tseed = %ld\n", pa->seedval) ;
+	printf("\tsize = %d\n", pa->size) ;
 	printf("\tnumber = %d\n", pa->num) ;
 	if(!optionT){
 		if(pa->exp){
@@ -229,7 +241,7 @@ int main(int argc, char **argv){
 	// Thread creation and join code taken from WROX Publications book
 	// Create a new thread
 	pthread_t a_thread ;
-	void *thread_result ;
+//	void *thread_result ;
 	int res ;
 	res = pthread_create(&a_thread, NULL, thread_function, (void *)NULL);
 	if (res != 0) {
@@ -276,9 +288,23 @@ int main(int argc, char **argv){
 	}
 
 
+
 	//	printf("Thread joined, it returned %s\n", (char *)thread_result);
 
-	printf("Statistics:\n") ;
+	printf("\n\nStatistics:\n") ;
+	printf("\taverage inter-arrival time = %012.3fms\n", (stat->totalIAT /  stat->customersArrived) ) ;
+	printf("\taverage service time = %012.3fms\n\n", (stat->serviceTime / stat->customersServed) ) ;
+
+	printf("\taverage number of customers in Q1 = %015.6f\n", (stat->avCustQ / stat->endSimulation ));
+	printf("\taverage number of customers in S1 =\n");
+	printf("\taverage number of customers in S2 =\n\n");
+
+	printf("\taverage time spent in system = %012.3fms\n\n", (stat->totalTimeSpent / stat->customersServed));
+
+	printf("\tstandard deviation for time spent in system =\n\n") ;
+
+	printf("\tCustomer drop probbility = %.2f\n", (stat->customersDropped / stat->customersArrived) ) ;
+			
 
 
 } // end of main function
