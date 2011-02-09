@@ -11,12 +11,15 @@
 
 using namespace std ;
 
+// Interrupt handler when SIGINT is caught
 void arrival_interrupt(int sig){
 	shutdown = 1 ;
 	while(custQ.size() != 0)
 		custQ.pop() ;
 }
 
+// The correct usage of the command describing all
+// the command line arguments
 void usage(){
 	printf("Usage:\t ./mm2 [-lambda lambda] [-mu mu] [-s] \\ \n\t[-seed seedval] [-size sz] \\ \n\t[-n num] [-d {exp|det}] [-t tsfile]\n") ;
 	exit(0) ;
@@ -26,7 +29,7 @@ void usage(){
 
 // Global variables
 struct params *pa ;
-struct statistics *stat ;
+struct statistics *stats ;
 struct custTsfile **trace ;
 int optionT ;
 queue<struct customerStruct *> custQ ;
@@ -48,7 +51,7 @@ int main(int argc, char **argv){
 	pa = (struct params *)malloc(sizeof(struct params)) ;
 	memset(pa->tsfile, '\0', sizeof(pa->tsfile)) ;
 
-	stat = (struct statistics *)malloc(sizeof(struct statistics)) ;
+	stats = (struct statistics *)malloc(sizeof(struct statistics)) ;
 
 
 	// Handling the signal
@@ -56,8 +59,8 @@ int main(int argc, char **argv){
 	sigaddset(&newSet, SIGINT) ;
 	pthread_sigmask(SIG_BLOCK, &newSet, NULL) ;
 
+	// default values for the params
 	optionT = 0 ;
-	//default values
 	pa->lambda = 0.5 ;
 	pa->mu = 0.35 ;
 	pa->oneServer = false ;
@@ -72,6 +75,7 @@ int main(int argc, char **argv){
 
 		for (int i = 0 ; i < argc-1 ; i++, argv++) {
 			if (*argv[0] == '-') {
+				// If command line option is lambda
 				if (strcmp(*argv, "-lambda") == 0) {
 					++i, argv++; 
 					if (i >= (argc-1)) {
@@ -82,6 +86,7 @@ int main(int argc, char **argv){
 						exit(0) ;
 					}
 					pa->lambda = atof(*argv) ;
+				// If command line option is mu	
 				} else if (strcmp(*argv, "-mu") == 0) {
 					++i, argv++; 
 					if (i >= (argc-1)) {
@@ -94,9 +99,11 @@ int main(int argc, char **argv){
 					pa->mu = atof(*argv) ;
 
 				}
+				// If command line option is s, hence one server
 				else if (strcmp(*argv, "-s") == 0) {
 					pa->oneServer = true ;
 				}
+				// If command line option is Seed, sets the srand seed
 				else if (strcmp(*argv, "-seed") == 0) {
 					++i, argv++; 
 					if (i >= (argc-1)) {
@@ -108,6 +115,7 @@ int main(int argc, char **argv){
 					}
 					pa->seedval = atof(*argv) ;
 				}
+				// Number of customers
 				else if (strcmp(*argv, "-n") == 0) {
 					++i, argv++; 
 					if (i >= (argc-1)) {
@@ -119,6 +127,7 @@ int main(int argc, char **argv){
 					}
 					pa->num = atof(*argv) ;
 				}
+				// The max size of Q
 				else if (strcmp(*argv, "-size") == 0) {
 					++i, argv++; 
 					if (i >= (argc-1)) {
@@ -130,6 +139,7 @@ int main(int argc, char **argv){
 					}
 					pa->size = atof(*argv) ;
 				}
+				// To chosse if exp or det 
 				else if (strcmp(*argv, "-d") == 0) {
 					++i, argv++; 
 					if (i >= (argc-1)) {
@@ -144,6 +154,7 @@ int main(int argc, char **argv){
 					else
 						usage() ;
 				}
+				// Tsfile file name
 				else if (strcmp(*argv, "-t") == 0) {
 					optionT = 1 ;
 					++i, argv++; 
@@ -221,6 +232,7 @@ int main(int argc, char **argv){
 		}
 	}
 	else{
+		// If optionT is chosen, then set the seed in srand
 		InitRandom(pa->seedval) ;
 	}
 
@@ -243,12 +255,10 @@ int main(int argc, char **argv){
 		exit(EXIT_FAILURE);
 	}
 
-//	gettimeofday(&tv, NULL) ;
 
 	// Thread creation and join code taken from WROX Publications book
 	// Create a new thread
 	pthread_t a_thread ;
-//	void *thread_result ;
 	int res ;
 	res = pthread_create(&a_thread, NULL, thread_function, (void *)NULL);
 	if (res != 0) {
@@ -271,8 +281,6 @@ int main(int argc, char **argv){
 			exit(EXIT_FAILURE);
 		}
 	}
-
-	//	printf("%8d.%dms:\n", (int)tv.tv_sec, (int)tv.tv_usec) ;
 
 
 	// Unblock the SIGINT signal here
@@ -302,19 +310,20 @@ int main(int argc, char **argv){
 
 	//	printf("Thread joined, it returned %s\n", (char *)thread_result);
 
+	// Printf the statistics after server threads are finished
 	printf("\n\nStatistics:\n") ;
-	printf("\taverage inter-arrival time = %012.3fms\n", (stat->totalIAT /  stat->customersArrived) ) ;
-	printf("\taverage service time = %012.3fms\n\n", (stat->serviceTime / stat->customersServed) ) ;
+	printf("\taverage inter-arrival time = %012.3fms\n", (stats->totalIAT /  stats->customersArrived) ) ;
+	printf("\taverage service time = %012.3fms\n\n", (stats->serviceTime / stats->customersServed) ) ;
 
-	printf("\taverage number of customers in Q1 = %015.6f\n", (stat->avCustQ / stat->endSimulation ));
-	printf("\taverage number of customers in S1 = %.6f\n", (stat->serverBusy[0] / stat->endSimulation));
-	printf("\taverage number of customers in S2 = %.6f\n\n", (stat->serverBusy[1] / stat->endSimulation));
+	printf("\taverage number of customers in Q1 = %015.6f\n", (stats->avCustQ / stats->endSimulation ));
+	printf("\taverage number of customers in S1 = %.6f\n", (stats->serverBusy[0] / stats->endSimulation));
+	printf("\taverage number of customers in S2 = %.6f\n\n", (stats->serverBusy[1] / stats->endSimulation));
 
-	printf("\taverage time spent in system = %012.3fms\n\n", (stat->totalTimeSpent / stat->customersServed));
+	printf("\taverage time spent in system = %012.3fms\n\n", (stats->totalTimeSpent / stats->customersServed));
 
-	printf("\tstandard deviation for time spent in system = %012.3fms\n\n", sqrt((stat->totalTimeSpentSq / stat->customersServed)- pow( (stat->totalTimeSpent / stat->customersServed),2)   )) ;
+	printf("\tstandard deviation for time spent in system = %012.3fms\n\n", sqrt((stats->totalTimeSpentSq / stats->customersServed)- pow( (stats->totalTimeSpent / stats->customersServed),2)   )) ;
 
-	printf("\tCustomer drop probbility = %.2f\n", (stat->customersDropped / stat->customersArrived) ) ;
+	printf("\tCustomer drop probbility = %.2f\n", (stats->customersDropped / stats->customersArrived) ) ;
 			
 
 
@@ -324,6 +333,7 @@ int main(int argc, char **argv){
 // Set seed for random function
 void InitRandom(long l_seed)
 {
+	// If no seedval is given
 	if (l_seed == 0L) {
 		time_t localtime=(time_t)0;
 

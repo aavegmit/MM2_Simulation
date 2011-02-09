@@ -11,25 +11,25 @@ using namespace std ;
 
 // Structure to hold command line params
 struct params{
-	double lambda;
-	double mu;
-	bool oneServer ;
-	long seedval ;
-	int size ;
-	int num ;
-	bool exp ;
-	char tsfile[256] ;
+	double lambda;		// To hold the value of lambda, default 0.5
+	double mu;		// MU, default 0.35
+	bool oneServer ;	// default false, implies two servers
+	long seedval ;		// To set the seed in srand
+	int size ;		// The size of Queue to hold max customers
+	int num ;		// Number of customers to be produced
+	bool exp ;		// To choose between exp and det
+	char tsfile[256] ;	// Saves the TSfile
 } ;
 
 // Structure to hold information related to one customer
 struct customerStruct{
-	int id ;
-	double iat ;
-	double service ;
-	double queuingD ;
-	struct timeval entersAt ;
-	struct timeval arrivesAt ;
-	struct timeval departedAt ;
+	int id ;			// Customer ID
+	double iat ;			// Inter Arrival time
+	double service ;		// Service time for this customer
+	double queuingD ;		// Queuing delay
+	struct timeval entersAt ;	// Timestamp when customer enters in Q
+	struct timeval arrivesAt ;	// Timestamp when customer arrives in the arrival thread
+	struct timeval departedAt ;	// Timestamp when customer departs from the system
 } ;
 
 struct custTsfile{
@@ -56,7 +56,7 @@ struct statistics{
 // Extern variable declaration
 extern struct params *pa ;
 extern struct custTsfile **trace ;
-extern struct statistics *stat ;
+extern struct statistics *stats ;
 extern int optionT ;
 extern queue<struct customerStruct *> custQ ;
 extern pthread_mutex_t mutex ;
