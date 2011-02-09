@@ -22,6 +22,11 @@ double getDiff(struct timeval t2, struct timeval t1){
 	return result ;
 }
 
+double getDiffInMicro(struct timeval t2, struct timeval t1){
+	return (t2.tv_sec * 1000000 + t2.tv_usec ) - (t1.tv_sec * 1000000 + t1.tv_usec) ;
+}
+
+
 double getDiffFromNow(){
 	struct timeval t2 ;
 	gettimeofday(&t2, NULL) ;
@@ -50,19 +55,13 @@ double getInterval(bool exp, double rate){
 
 }
 
-void arrival_interrupt(int sig){
-//	pthread_sigmask(SIG_BLOCK, &newSet, NULL) ;
-	shutdown = 1 ;
-//	pthread_mutex_lock(&mutex) ;
-//	while(custQ.size() != 0)
-//		custQ.pop() ;
-//	pthread_cond_broadcast(&cv) ;
-//	pthread_mutex_unlock(&mutex) ;
-//	pthread_exit(0) ;
-}
+//void arrival_interrupt(int sig){
+//	shutdown = 1 ;
+//}
 
 void *thread_function(void *arg){
 	struct customerStruct *customer ;
+	struct timeval temptv, temptv1 ;
 
 	// Initialize stat elements
 	stat->customersDropped = 0.0 ;
@@ -75,15 +74,13 @@ void *thread_function(void *arg){
 	stat->avCustQtemp = tv ;
 
 	// Unblock the SIGINT signal here
-	act.sa_handler = arrival_interrupt ;
-	sigaction(SIGINT, &act, NULL) ;
-	pthread_sigmask(SIG_UNBLOCK, &newSet, NULL) ;
+//	act.sa_handler = arrival_interrupt ;
+//	sigaction(SIGINT, &act, NULL) ;
+//	pthread_sigmask(SIG_UNBLOCK, &newSet, NULL) ;
 
 	// Insert customers into the Q
 	for (int i = 0; i < pa->num ; ++i){
 		if (shutdown){
-			pthread_sigmask(SIG_BLOCK, &newSet, NULL) ;
-			shutdown = 1 ;
 			pthread_mutex_lock(&mutex) ;
 			while(custQ.size() != 0)
 				custQ.pop() ;
@@ -98,13 +95,23 @@ void *thread_function(void *arg){
 		else
 			ita = getInterval(pa->exp, pa->lambda);
 		// Compute the bookkeeping time
+		if (i == 0){
+			gettimeofday(&tv, NULL) ;
+			usleep( (useconds_t)ita*1000 ) ;
+		}
+		else{
+			gettimeofday(&temptv1, NULL) ;
+			usleep( (useconds_t)(ita*1000 -  (temptv1.tv_sec * 1000000 + temptv1.tv_usec ) + (temptv.tv_sec * 1000000 + temptv.tv_usec)  ) ) ;
+		}
 
-		usleep(ita*1000) ;
+		gettimeofday(&temptv, NULL) ;
 		customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)) ;
-		gettimeofday(&(customer->arrivesAt), NULL) ;
+//		gettimeofday(&(customer->arrivesAt), NULL) ;
+		customer->arrivesAt = temptv ;
 		++stat->customersArrived ;
 		stat->totalIAT += ita ;
-		printf("%sms: c%d arrives, inter-arrival time = %.3fms\n", getTimestamp(), i+1, ita) ;
+		printf("%012.03fms: c%d arrives, inter-arrival time = %.3fms\n", getDiff(customer->arrivesAt, tv), i+1, ita) ;
+//		printf("%sms: c%d arrives, inter-arrival time = %.3fms\n", getTimestamp(), i+1, ita) ;
 		customer->iat = ita ;
 		if ( (int)custQ.size() < pa->size){
 			customer->id = i+1 ;

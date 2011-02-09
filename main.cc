@@ -11,6 +11,12 @@
 
 using namespace std ;
 
+void arrival_interrupt(int sig){
+	shutdown = 1 ;
+	while(custQ.size() != 0)
+		custQ.pop() ;
+}
+
 void usage(){
 	printf("Usage:\t ./mm2 [-lambda lambda] [-mu mu] [-s] \\ \n\t[-seed seedval] [-size sz] \\ \n\t[-n num] [-d {exp|det}] [-t tsfile]\n") ;
 	exit(0) ;
@@ -237,7 +243,7 @@ int main(int argc, char **argv){
 		exit(EXIT_FAILURE);
 	}
 
-	gettimeofday(&tv, NULL) ;
+//	gettimeofday(&tv, NULL) ;
 
 	// Thread creation and join code taken from WROX Publications book
 	// Create a new thread
@@ -269,13 +275,17 @@ int main(int argc, char **argv){
 	//	printf("%8d.%dms:\n", (int)tv.tv_sec, (int)tv.tv_usec) ;
 
 
+	// Unblock the SIGINT signal here
+	act.sa_handler = arrival_interrupt ;
+	sigaction(SIGINT, &act, NULL) ;
+	pthread_sigmask(SIG_UNBLOCK, &newSet, NULL) ;
 
-	// Thread Join code taken from WROX Publications
-	//	res = pthread_join(a_thread, &thread_result);
-	//	if (res != 0) {
-	//		perror("Thread join failed");
-	//		exit(EXIT_FAILURE);
-	//	}
+//	 Thread Join code taken from WROX Publications
+//		res = pthread_join(a_thread, &thread_result);
+//		if (res != 0) {
+//			perror("Thread join failed");
+//			exit(EXIT_FAILURE);
+//		}
 
 
 
