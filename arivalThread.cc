@@ -42,23 +42,32 @@ double getDiffFromNow(){
 // Random value according to poision distribution
 double getExpInterval(double dval, double rate){
 
-	return (1 - exp( -1 *( dval*rate)) )*1000 ;
+	rate *= -1 ;
+	return (log(1-dval) / (rate) ) * 1000 ;
+//	return (1 - exp( -1 *( dval*rate)) )*1000 ;
 	//	return (1 - exp( -1 *( dval*rate*1000)) ) ;
 
 }
 
 // Get interval based on det or exp approach
 double getInterval(bool exp, double rate){
+	double retVal ;
 	// Exponential distribution selected
 	if(exp){
 		double dval = (double)drand48() ;
-		return getExpInterval(dval, rate) ;
+		retVal =  getExpInterval(dval, rate) ;
 	}
 	// Deterministic option selected
 	else{
 		double ms = ((double)1000)/rate ;
-		return round(ms) ;
+		retVal = round(ms) ;
 	}
+	if (retVal < 1)
+		return 1 ;
+	else if(retVal > 10000)
+		return 10000 ;
+	else
+		return retVal ;
 
 }
 
