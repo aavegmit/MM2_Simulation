@@ -7,14 +7,15 @@
 
 // Get the time difference from start simulation in printable format
 char *getTimestamp(){
-	char *timestamp ;
-	timestamp = (char *)malloc(13) ;
+//	char *timestamp ;
+//	timestamp = (char *)malloc(13) ;
+	memset(timestamp1, '\0', 13) ;
 	struct timeval tv1 ;
 	gettimeofday(&tv1, NULL) ;
 	long int diff = (tv1.tv_sec * 1000000 + tv1.tv_usec ) - (tv.tv_sec * 1000000 + tv.tv_usec) ;
-	sprintf(timestamp, "%08ld.%03ld", (long int)diff/1000  , (long int)diff % 1000 ) ;
-	timestamp[12] = '\0' ;
-	return timestamp ;
+	sprintf(timestamp1, "%08ld.%03ld", (long int)diff/1000  , (long int)diff % 1000 ) ;
+	timestamp1[12] = '\0' ;
+	return timestamp1 ;
 }
 
 // Get time difference in milliseconds between two timestamps
@@ -42,6 +43,7 @@ double getDiffFromNow(){
 double getExpInterval(double dval, double rate){
 
 	return (1 - exp( -1 *( dval*rate)) )*1000 ;
+	//	return (1 - exp( -1 *( dval*rate*1000)) ) ;
 
 }
 
@@ -69,20 +71,20 @@ void *thread_function(void *arg){
 	struct customerStruct *customer ;
 	struct timeval temptv, temptv1 ;
 
-	// Initialize stat elements
-	stats->customersDropped = 0.0 ;
-	stats->customersArrived = 0 ;
-	stats->totalIAT = 0.0 ;
-	stats->totalTimeSpent = 0.00 ;
-	stats->totalTimeSpentSq = 0.00 ;
-	stats->customersDropped = 0.0 ;
-	stats->serviceTime = 0.0 ;
-	stats->avCustQtemp = tv ;
+//	// Initialize stat elements
+//	stats->customersDropped = 0.0 ;
+//	stats->customersArrived = 0 ;
+//	stats->totalIAT = 0.0 ;
+//	stats->totalTimeSpent = 0.00 ;
+//	stats->totalTimeSpentSq = 0.00 ;
+//	stats->customersDropped = 0.0 ;
+//	stats->serviceTime = 0.0 ;
+//	stats->avCustQtemp = tv ;
 
 	// Unblock the SIGINT signal here
-//	act.sa_handler = arrival_interrupt ;
-//	sigaction(SIGINT, &act, NULL) ;
-//	pthread_sigmask(SIG_UNBLOCK, &newSet, NULL) ;
+	//	act.sa_handler = arrival_interrupt ;
+	//	sigaction(SIGINT, &act, NULL) ;
+	//	pthread_sigmask(SIG_UNBLOCK, &newSet, NULL) ;
 
 	// Insert customers into the Q
 	for (int i = 0; i < pa->num ; ++i){
@@ -97,26 +99,34 @@ void *thread_function(void *arg){
 		}
 		double ita ;
 		// If input to be taken from the input file
-		if (optionT)
-			ita = trace[i]->iat ;
+		if (optionT){
+//			ita = trace[i]->iat ;
+			ita = traceIat[i] ;
+		}
 		else
 			ita = getInterval(pa->exp, pa->lambda);
 
 		// Compute the bookkeeping time
 		if (i == 0){
 			gettimeofday(&tv, NULL) ;
-			usleep( (useconds_t)ita*1000 ) ;
+			stats->avCustQtemp = tv ;
+			usleep( ita*1000 ) ;
 		}
 		else{
 			gettimeofday(&temptv1, NULL) ;
-
-			// Sleep for ita time minus the bookkeeping time
-			usleep( (useconds_t)(ita*1000 -  (temptv1.tv_sec * 1000000 + temptv1.tv_usec ) + (temptv.tv_sec * 1000000 + temptv.tv_usec)  ) ) ;
+			long int actualIat = ita*1000 -  (temptv1.tv_sec * 1000000 + temptv1.tv_usec ) + (temptv.tv_sec * 1000000 + temptv.tv_usec)  ;
+			if (actualIat > 0){
+				// Sleep for ita time minus the bookkeeping time
+				usleep( (useconds_t) actualIat  ) ;
+			}
+			else{
+				usleep(0) ;
+			}
 		}
 
 		// To compute the bookkeeping time
 		gettimeofday(&temptv, NULL) ;
-		
+
 		// Create a custoemr object
 		customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)) ;
 

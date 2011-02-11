@@ -55,7 +55,7 @@ struct statistics{
 
 // Extern variable declaration
 extern struct params *pa ;
-extern struct custTsfile **trace ;
+extern struct custTsfile *trace[40] ;
 extern struct statistics *stats ;
 extern int optionT ;
 extern queue<struct customerStruct *> custQ ;
@@ -65,6 +65,9 @@ extern timeval tv ;
 extern sigset_t newSet ;
 extern struct sigaction act ;
 extern int shutdown;
+extern char *timestamp1 ;
+extern double *traceIat ;
+extern double *traceSer ;
 
 
 

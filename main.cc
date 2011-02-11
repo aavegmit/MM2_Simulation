@@ -30,7 +30,7 @@ void usage(){
 // Global variables
 struct params *pa ;
 struct statistics *stats ;
-struct custTsfile **trace ;
+struct custTsfile *trace[40] ;
 int optionT ;
 queue<struct customerStruct *> custQ ;
 pthread_mutex_t mutex ;
@@ -39,6 +39,9 @@ struct timeval tv ;
 sigset_t newSet ;
 struct sigaction act ;
 int shutdown = 0 ;
+char *timestamp1 ;
+double *traceIat ;
+double *traceSer ;
 
 
 
@@ -53,6 +56,22 @@ int main(int argc, char **argv){
 
 	stats = (struct statistics *)malloc(sizeof(struct statistics)) ;
 
+	timestamp1 = (char *)malloc(13) ;
+
+	// Initialize stat elements
+	stats->customersDropped = 0.0 ;
+	stats->customersArrived = 0 ;
+	stats->customersServed = 0.0 ;
+	stats->totalIAT = 0.0 ;
+	stats->totalTimeSpent = 0.00 ;
+	stats->totalTimeSpentSq = 0.00 ;
+	stats->customersDropped = 0.0 ;
+	stats->serviceTime = 0.0 ;
+	stats->avCustQ = 0.0 ;
+	//	stats->avCustQtemp = tv ;
+	stats->endSimulation = 0.0 ;
+	stats->serverBusy[0] = 0.0 ;
+	stats->serverBusy[1] = 0.0 ;
 
 	// Handling the signal
 	sigemptyset(&newSet) ;
@@ -86,7 +105,7 @@ int main(int argc, char **argv){
 						exit(0) ;
 					}
 					pa->lambda = atof(*argv) ;
-				// If command line option is mu	
+					// If command line option is mu	
 				} else if (strcmp(*argv, "-mu") == 0) {
 					++i, argv++; 
 					if (i >= (argc-1)) {
@@ -171,6 +190,46 @@ int main(int argc, char **argv){
 			}
 		}
 	}
+	if (optionT){
+		FILE *fp ;
+		int tnum;
+		int tnum1 ;
+		if( (fp = fopen(pa->tsfile, "r")) == NULL){
+			printf("File open unsuccessfull\n") ;
+			exit(0) ;
+		}
+		if(!fscanf (fp, "%d", &tnum)){
+			printf("Error in Trace file\n") ;
+			exit(0) ;
+		}	
+		pa->num = tnum ;
+		//		trace = (struct custTsfile **)malloc(tnum) ;
+		//		memset(trace, 0, tnum) ;
+		traceIat = (double *)malloc(sizeof(double)*tnum) ;
+		traceSer = (double *)malloc(sizeof(double)*tnum) ;
+
+		// Allocate num amount of memory to trace structures
+		for (int i = 0; i < tnum; ++i){
+//			trace[i] = (struct custTsfile *)malloc(sizeof(struct custTsfile)) ;
+			if(!fscanf (fp, "%d", &tnum1)){
+				printf("Error in Trace file\n") ;
+				exit(0) ;
+			}	
+//			trace[i]->iat = tnum1 ;
+			traceIat[i] = (double)tnum1 ;
+			if(!fscanf (fp, "%d", &tnum1)){
+				printf("Error in Trace file\n") ;
+				exit(0) ;
+			}	
+			traceSer[i] = (double)tnum1 ;
+		
+		}
+		fclose(fp) ;
+	}
+	else{
+		// If optionT is chosen, then set the seed in srand
+		InitRandom(pa->seedval) ;
+	}
 
 	//Display the params
 	printf("Parameters:\n") ;
@@ -201,40 +260,6 @@ int main(int argc, char **argv){
 
 
 
-	// Init random seed
-	if (optionT){
-		FILE *fp ;
-		int tnum;
-		long tnum1 ;
-		if( (fp = fopen(pa->tsfile, "r")) == NULL){
-			printf("File open unsuccessfull\n") ;
-			exit(0) ;
-		}
-		if(!fscanf (fp, "%d", &tnum)){
-			printf("Error in Trace file\n") ;
-			exit(0) ;
-		}	
-		pa->num = tnum ;
-		trace = (struct custTsfile **)malloc(tnum) ;
-		// Allocate num amount of memory to trace structures
-		for (int i = 0; i < tnum; ++i){
-			trace[i] = (struct custTsfile *)malloc(sizeof(struct custTsfile)) ;
-			if(!fscanf (fp, "%ld", &tnum1)){
-				printf("Error in Trace file\n") ;
-				exit(0) ;
-			}	
-			trace[i]->iat = tnum1 ;
-			if(!fscanf (fp, "%ld", &tnum1)){
-				printf("Error in Trace file\n") ;
-				exit(0) ;
-			}	
-			trace[i]->service = tnum1 ;
-		}
-	}
-	else{
-		// If optionT is chosen, then set the seed in srand
-		InitRandom(pa->seedval) ;
-	}
 
 	printf("00000000.000ms: emulation begins\n") ;
 
@@ -288,12 +313,12 @@ int main(int argc, char **argv){
 	sigaction(SIGINT, &act, NULL) ;
 	pthread_sigmask(SIG_UNBLOCK, &newSet, NULL) ;
 
-//	 Thread Join code taken from WROX Publications
-//		res = pthread_join(a_thread, &thread_result);
-//		if (res != 0) {
-//			perror("Thread join failed");
-//			exit(EXIT_FAILURE);
-//		}
+	//	 Thread Join code taken from WROX Publications
+	//		res = pthread_join(a_thread, &thread_result);
+	//		if (res != 0) {
+	//			perror("Thread join failed");
+	//			exit(EXIT_FAILURE);
+	//		}
 
 
 
@@ -324,7 +349,20 @@ int main(int argc, char **argv){
 	printf("\tstandard deviation for time spent in system = %012.3fms\n\n", sqrt((stats->totalTimeSpentSq / stats->customersServed)- pow( (stats->totalTimeSpent / stats->customersServed),2)   )) ;
 
 	printf("\tCustomer drop probbility = %.2f\n", (stats->customersDropped / stats->customersArrived) ) ;
-			
+
+	// Free up memory
+	free(timestamp1) ;
+	free(pa) ;
+	free(stats) ;
+	if(optionT){
+//		for (int jj=0; jj < pa->num ; ++jj)
+//			free(trace[jj]) ;
+		//	free(trace) ;
+	}
+	//	free(custQ) ;
+	free(traceIat) ;
+	free(traceSer) ;
+
 
 
 } // end of main function

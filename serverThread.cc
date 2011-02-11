@@ -54,8 +54,10 @@ void *server_function(void *arg){
 		printf("%sms: c%d begin service at s%ld\n",getTimestamp(), customer->id, sid) ;
 		//  Work on the customer
 		double inter ;
-		if(optionT)
-			inter = trace[customer->id - 1]->service ;
+		if(optionT){
+//			inter = trace[customer->id - 1]->service ;
+			inter = traceSer[customer->id - 1] ;
+		}
 		else
 			inter = getInterval(pa->exp, pa->mu) ;
 		usleep(inter*1000) ;
@@ -73,6 +75,7 @@ void *server_function(void *arg){
 		stats->totalTimeSpent += getDiff(customer->departedAt, customer->arrivesAt) ;
 		stats->totalTimeSpentSq += pow(getDiff(customer->departedAt, customer->arrivesAt) , 2) ;
 		stats->serverBusy[sid] += getDiff(customer->departedAt, now) ;
+		free(customer) ;
 
 	}
 
