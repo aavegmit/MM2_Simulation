@@ -337,14 +337,14 @@ int main(int argc, char **argv){
 
 	// Printf the statistics after server threads are finished
 	printf("\n\nStatistics:\n") ;
-	printf("\taverage inter-arrival time = %0.6f\n", (stats->totalIAT /  stats->customersArrived * 1000 ) ) ;
-	printf("\taverage service time = %0.6f\n\n", (stats->serviceTime / stats->customersServed * 1000 ) ) ;
+	printf("\taverage inter-arrival time = %0.6f\n", (stats->totalIAT /  stats->customersArrived )/1000 ) ;
+	printf("\taverage service time = %0.6f\n\n", (stats->serviceTime / stats->customersServed )/1000 ) ;
 
 	printf("\taverage number of customers in Q1 = %.6f\n", (stats->avCustQ / stats->endSimulation ));
 	printf("\taverage number of customers in S1 = %.6f\n", (stats->serverBusy[0] / stats->endSimulation));
 	printf("\taverage number of customers in S2 = %.6f\n\n", (stats->serverBusy[1] / stats->endSimulation));
 
-	printf("\taverage time spent in system = %0.6f\n\n", (stats->totalTimeSpent / stats->customersServed *1000));
+	printf("\taverage time spent in system = %0.6f\n\n", (stats->totalTimeSpent / stats->customersServed ) / 1000  );
 
 	printf("\tstandard deviation for time spent in system = %0.6f\n\n", sqrt((stats->totalTimeSpentSq / stats->customersServed)- pow( (stats->totalTimeSpent / stats->customersServed),2)   )/1000 ) ;
 
