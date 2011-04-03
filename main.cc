@@ -21,7 +21,7 @@ void arrival_interrupt(int sig){
 // The correct usage of the command describing all
 // the command line arguments
 void usage(){
-	printf("Usage:\t ./mm2 [-lambda lambda] [-mu mu] [-s] \\ \n\t[-seed seedval] [-size sz] \\ \n\t[-n num] [-d {exp|det}] [-t tsfile]\n") ;
+	fprintf(stderr, "Usage:\t ./mm2 [-lambda lambda] [-mu mu] [-s] \\ \n\t[-seed seedval] [-size sz] \\ \n\t[-n num] [-d {exp|det}] [-t tsfile]\n") ;
 	exit(0) ;
 }
 
@@ -101,7 +101,7 @@ int main(int argc, char **argv){
 						usage() ;
 					}
 					if (!atof(*argv) || atof(*argv) < 0 ){
-						printf("Bad Lambda value\n") ;
+						fprintf(stderr,"Bad Lambda value\n") ;
 						exit(0) ;
 					}
 					pa->lambda = atof(*argv) ;
@@ -112,7 +112,7 @@ int main(int argc, char **argv){
 						usage() ;
 					}
 					if (!atof(*argv) || atof(*argv) < 0 ){
-						printf("Bad mu value\n") ;
+						fprintf(stderr,"Bad mu value\n") ;
 						exit(0) ;
 					}
 					pa->mu = atof(*argv) ;
@@ -129,7 +129,7 @@ int main(int argc, char **argv){
 						usage() ;
 					}
 					if (!atof(*argv) || atof(*argv) < 0 ){
-						printf("Bad seed value\n") ;
+						fprintf(stderr,"Bad seed value\n") ;
 						exit(0) ;
 					}
 					pa->seedval = atof(*argv) ;
@@ -141,7 +141,7 @@ int main(int argc, char **argv){
 						usage() ;
 					}
 					if (!atof(*argv) || atof(*argv) < 0 ){
-						printf("Bad num value\n") ;
+						fprintf(stderr,"Bad num value\n") ;
 						exit(0) ;
 					}
 					pa->num = atof(*argv) ;
@@ -153,7 +153,7 @@ int main(int argc, char **argv){
 						usage() ;
 					}
 					if (!atof(*argv) || atof(*argv) < 0 ){
-						printf("Bad size value\n") ;
+						fprintf(stderr,"Bad size value\n") ;
 						exit(0) ;
 					}
 					pa->size = atof(*argv) ;
@@ -195,11 +195,11 @@ int main(int argc, char **argv){
 		int tnum;
 		int tnum1 ;
 		if( (fp = fopen(pa->tsfile, "r")) == NULL){
-			printf("File open unsuccessfull\n") ;
+			fprintf(stderr,"File open unsuccessfull\n") ;
 			exit(0) ;
 		}
 		if(!fscanf (fp, "%d", &tnum)){
-			printf("Error in Trace file\n") ;
+			fprintf(stderr,"Error in Trace file\n") ;
 			exit(0) ;
 		}	
 		pa->num = tnum ;
@@ -212,13 +212,13 @@ int main(int argc, char **argv){
 		for (int i = 0; i < tnum; ++i){
 //			trace[i] = (struct custTsfile *)malloc(sizeof(struct custTsfile)) ;
 			if(!fscanf (fp, "%d", &tnum1)){
-				printf("Error in Trace file\n") ;
+				fprintf(stderr,"Error in Trace file\n") ;
 				exit(0) ;
 			}	
 //			trace[i]->iat = tnum1 ;
 			traceIat[i] = (double)tnum1 ;
 			if(!fscanf (fp, "%d", &tnum1)){
-				printf("Error in Trace file\n") ;
+				fprintf(stderr,"Error in Trace file\n") ;
 				exit(0) ;
 			}	
 			traceSer[i] = (double)tnum1 ;

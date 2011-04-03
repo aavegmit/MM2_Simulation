@@ -80,6 +80,11 @@ void *thread_function(void *arg){
 	struct customerStruct *customer ;
 	struct timeval temptv, temptv1 ;
 
+
+
+	int jdFlag  = 0 ;
+
+
 //	// Initialize stat elements
 //	stats->customersDropped = 0.0 ;
 //	stats->customersArrived = 0 ;
@@ -106,18 +111,23 @@ void *thread_function(void *arg){
 			pthread_mutex_unlock(&mutex) ;
 			pthread_exit(0) ;
 		}
-		double ita ;
+		double ita, serv ;
 		// If input to be taken from the input file
 		if (optionT){
 //			ita = trace[i]->iat ;
 			ita = traceIat[i] ;
+			serv = traceSer[i] ;
 		}
-		else
+		else{
 			ita = getInterval(pa->exp, pa->lambda);
+			serv = getInterval(pa->exp, pa->mu);
+		}
 
 		// Compute the bookkeeping time
 		if (i == 0){
 			gettimeofday(&tv, NULL) ;
+			if (!jdFlag)
+				temptv1 = tv ;
 			stats->avCustQtemp = tv ;
 			usleep( ita*1000 ) ;
 		}
@@ -136,6 +146,10 @@ void *thread_function(void *arg){
 		// To compute the bookkeeping time
 		gettimeofday(&temptv, NULL) ;
 
+		if (!jdFlag)
+		// To find the actual inter arrival time
+			ita = getDiff(temptv, temptv1) ;
+
 		// Create a custoemr object
 		customer = (struct customerStruct *)malloc(sizeof(struct customerStruct)) ;
 
@@ -147,8 +161,12 @@ void *thread_function(void *arg){
 
 		// Increment the Total inter arrival time for final statistics
 		stats->totalIAT += ita ;
-		printf("%012.03fms: c%d arrives, inter-arrival time = %.3fms\n", getDiff(customer->arrivesAt, tv), i+1, ita) ;
+		if(jdFlag)
+			printf("%012.03fms: c%d arrives, inter-arrival time = %.3fms\n", getDiff(customer->arrivesAt, tv), i+1, ita) ;
+		else
+			printf("%sms: c%d arrives, inter-arrival time = %.3fms\n", getTimestamp(), i+1, ita) ;
 		customer->iat = ita ;
+		customer->service = serv ;
 		if ( (int)custQ.size() < pa->size){
 			// Set the customer ID
 			customer->id = i+1 ;
@@ -166,7 +184,7 @@ void *thread_function(void *arg){
 			printf("%sms: c%d enters Q1\n", getTimestamp(), i+1) ;
 
 			// Signal a server to wake up
-			pthread_cond_signal(&cv) ;
+			pthread_cond_broadcast(&cv) ;
 
 			// Release the lock
 			pthread_mutex_unlock(&mutex) ;

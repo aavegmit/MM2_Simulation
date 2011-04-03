@@ -51,25 +51,26 @@ void *server_function(void *arg){
 		pthread_mutex_unlock(&mutex) ;
 
 
-		printf("%sms: c%d begin service at s%ld\n",getTimestamp(), customer->id, sid) ;
+		printf("%sms: c%d begin service at s%ld\n",getTimestamp(), customer->id, sid+1) ;
 		//  Work on the customer
 		double inter ;
-		if(optionT){
-//			inter = trace[customer->id - 1]->service ;
-			inter = traceSer[customer->id - 1] ;
-		}
-		else
-			inter = getInterval(pa->exp, pa->mu) ;
+//		if(optionT){
+////			inter = trace[customer->id - 1]->service ;
+//			inter = traceSer[customer->id - 1] ;
+//		}
+//		else
+//			inter = getInterval(pa->exp, pa->mu) ;
+		inter = customer->service ;
 		usleep(inter*1000) ;
 
 		// populate the customer structure with service time
-		customer->service = inter ;
+//		customer->service = inter ;
 
 		// Computation of service time statistics
 		stats->serviceTime += inter ;
 		gettimeofday(&(customer->departedAt), NULL) ;
-		printf("%sms: c%d departs from s%ld, service time = %.3fms ",getTimestamp(), customer->id,sid, inter) ;
-		printf("time in system = %.3fms\n", getDiff(customer->departedAt, customer->arrivesAt)) ;
+		printf("%sms: c%d departs from s%ld, service time = %.3fms time in system = %.3fms\n",getTimestamp(), customer->id,sid+1, inter, getDiff(customer->departedAt, customer->arrivesAt)) ;
+//		printf("time in system = %.3fms\n", getDiff(customer->departedAt, customer->arrivesAt)) ;
 
 		// Stat calculations
 		stats->totalTimeSpent += getDiff(customer->departedAt, customer->arrivesAt) ;
